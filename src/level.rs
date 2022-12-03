@@ -34,6 +34,7 @@ pub fn load_gd_level_string(string: &str) -> Vec<Object> {
 			match key {
 				"1" => {
 					let id = value.parse().unwrap();
+					object.id = id;
 					if id == 8 {
 						object.death = true;
 					}

@@ -2,7 +2,7 @@ use level::load_gd_level_string;
 use sfml::graphics::{
 	Color, Rect, RectangleShape, RenderTarget, RenderWindow, Shape, Transformable,
 };
-use sfml::system::Vector2;
+use sfml::system::{Vector2, Vector2f};
 use sfml::window::{Event, Key};
 
 mod level;
@@ -56,10 +56,7 @@ fn main() {
 				player.jump();
 			}
 			if Key::is_pressed(Key::R) {
-				player.x = -60.0;
-				player.y = 0.0;
-				player.dead = false;
-				player.y_vel = 0.0;
+				player.reset();
 			}
 		}
 
@@ -68,14 +65,19 @@ fn main() {
 		let window_size: Vector2<f32> = window.size().as_other();
 		let scale = 2.0;
 		let scaled_window_size = window_size / (2.0 * scale);
-		let my_view = sfml::graphics::View::new(
-			(
+		let mut my_view = sfml::graphics::View::new(
+			Vector2f::new(
 				scaled_window_size.x + player.x - window_size.x / 6.0,
 				window_size.y - scaled_window_size.y + 10.0,
-			)
-				.into(),
+			),
 			window_size / scale,
 		);
+		let following_player_y =
+			window_size.y - scaled_window_size.y - player.y + scaled_window_size.y;
+		if following_player_y < my_view.center().y {
+			let center = my_view.center();
+			my_view.set_center(Vector2f::new(center.x, following_player_y));
+		}
 		window.set_view(&my_view);
 
 		window.clear(Color::BLACK);
