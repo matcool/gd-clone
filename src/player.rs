@@ -21,8 +21,8 @@ impl AxisBoundingBox {
 		let hy = self.y - self.height / 2.0;
 		let hxo = other.x + other.width / 2.0;
 		let hyo = other.y - other.height / 2.0;
-		(hx - hxo).abs() <= (self.width + other.width) / 2.0 &&
-		(hy - hyo).abs() <= (self.height + other.height) / 2.0
+		(hx - hxo).abs() <= (self.width + other.width) / 2.0
+			&& (hy - hyo).abs() <= (self.height + other.height) / 2.0
 	}
 
 	pub fn offset_by(&self, x: f32, y: f32) -> Self {
@@ -96,6 +96,16 @@ impl Player {
 		}
 	}
 
+	pub fn inner_bounding_box(&self) -> AxisBoundingBox {
+		let size = OBJECT_SIZE / 4.0;
+		AxisBoundingBox {
+			x: self.x - size / 2.0,
+			y: self.y + size / 2.0,
+			width: size,
+			height: size,
+		}
+	}
+
 	pub fn update(&mut self, dt: f32, objects: &[Object]) {
 		if self.dead {
 			return;
@@ -105,18 +115,23 @@ impl Player {
 		for _ in 0..SUBSTEPS {
 			let mut ground = 0.0;
 			for object in objects {
-				if self.bounding_box().intersects(&object.offset_bounding_box()) {
+				let object_bb = object.offset_bounding_box();
+				if self.bounding_box().intersects(&object_bb) {
 					if object.death {
 						self.dead = true;
-						return
+						return;
 					}
-					if self.y > object.y {
+					// only "step" up on half block diff
+					if self.y - HALF_OBJECT_SIZE
+						>= object.y
+							+ (object.bounding_box.height / 2.0 - OBJECT_SIZE / 3.0).max(0.0)
+					{
 						if object.offset_bounding_box().y > ground {
 							ground = object.offset_bounding_box().y;
 						}
-					} else {
+					} else if self.inner_bounding_box().intersects(&object_bb) {
 						self.dead = true;
-						return
+						return;
 					}
 				}
 			}

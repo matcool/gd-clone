@@ -6,7 +6,7 @@ use sfml::window::{Event, Key};
 
 mod player;
 
-use player::{AxisBoundingBox, Object, Player, OBJECT_SIZE, HALF_OBJECT_SIZE};
+use player::{AxisBoundingBox, Object, Player, HALF_OBJECT_SIZE, OBJECT_SIZE};
 
 fn draw_box(window: &mut RenderWindow, bounding_box: &AxisBoundingBox, color: Color) {
 	let window_height = window.size().y as f32;
@@ -54,6 +54,16 @@ fn main() {
 		object.y = HALF_OBJECT_SIZE;
 		objects.push(object);
 
+		let mut object = Object::new();
+		object.x = 10.0 * OBJECT_SIZE;
+		object.y = HALF_OBJECT_SIZE + OBJECT_SIZE;
+		objects.push(object);
+
+		let mut object = Object::new();
+		object.x = 4.0 * OBJECT_SIZE;
+		object.y = HALF_OBJECT_SIZE + OBJECT_SIZE;
+		objects.push(object);
+
 		for i in 0..3 {
 			let mut object = Object::new();
 			object.x = (20.0 + i as f32) * OBJECT_SIZE;
@@ -77,14 +87,18 @@ fn main() {
 			}
 		}
 
-		if Key::is_pressed(Key::Up) {
-			player.jump();
-		}
-		if Key::is_pressed(Key::R) {
-			player.x = 0.0;
-			player.y = 0.0;
-			player.dead = false;
-			player.y_vel = 0.0;
+		if window.has_focus() {
+			if Key::is_pressed(Key::Up)
+				|| sfml::window::mouse::Button::is_pressed(sfml::window::mouse::Button::Left)
+			{
+				player.jump();
+			}
+			if Key::is_pressed(Key::R) {
+				player.x = 0.0;
+				player.y = 0.0;
+				player.dead = false;
+				player.y_vel = 0.0;
+			}
 		}
 
 		player.update(1.0 / 60.0, objects.as_slice());
@@ -118,10 +132,16 @@ fn main() {
 
 		window.draw(&shape);
 
-		draw_box(&mut window, &player.bounding_box(), Color::RED);
+		draw_box(&mut window, &player.bounding_box(), Color::GREEN);
+		draw_box(&mut window, &player.inner_bounding_box(), Color::BLUE);
 
 		for object in &objects {
-			draw_box(&mut window, &object.offset_bounding_box(), if object.death { Color::RED } else { Color::BLUE });
+			let color = if object.death {
+				Color::RED
+			} else {
+				Color::BLUE
+			};
+			draw_box(&mut window, &object.offset_bounding_box(), color);
 		}
 
 		window.display();
