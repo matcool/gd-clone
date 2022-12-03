@@ -1,7 +1,7 @@
 use sfml::graphics::{
 	Color, Rect, RectangleShape, RenderTarget, RenderWindow, Shape, Transformable,
 };
-use sfml::system::Vector2;
+use sfml::system::{Vector2, Vector2f};
 use sfml::window::{Event, Key};
 
 mod player;
@@ -55,7 +55,7 @@ fn main() {
 		objects.push(object);
 
 		let mut object = Object::new();
-		object.x = 10.0 * OBJECT_SIZE;
+		object.x = 12.0 * OBJECT_SIZE;
 		object.y = HALF_OBJECT_SIZE + OBJECT_SIZE;
 		objects.push(object);
 
@@ -94,7 +94,7 @@ fn main() {
 				player.jump();
 			}
 			if Key::is_pressed(Key::R) {
-				player.x = 0.0;
+				player.x = -60.0;
 				player.y = 0.0;
 				player.dead = false;
 				player.y_vel = 0.0;

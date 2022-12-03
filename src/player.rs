@@ -126,7 +126,7 @@ impl Player {
 						>= object.y
 							+ (object.bounding_box.height / 2.0 - OBJECT_SIZE / 3.0).max(0.0)
 					{
-						if object.offset_bounding_box().y > ground {
+						if object.offset_bounding_box().y > ground && self.y_vel < 50.0 {
 							ground = object.offset_bounding_box().y;
 						}
 					} else if self.inner_bounding_box().intersects(&object_bb) {
