@@ -1,5 +1,3 @@
-use sfml::system::Vector2;
-
 #[derive(Debug, Clone)]
 pub struct AxisBoundingBox {
 	pub x: f32,
@@ -9,13 +7,6 @@ pub struct AxisBoundingBox {
 }
 
 impl AxisBoundingBox {
-	pub fn pos(&self) -> Vector2<f32> {
-		(self.x, self.y).into()
-	}
-	pub fn size(&self) -> Vector2<f32> {
-		(self.width, self.height).into()
-	}
-
 	pub fn intersects(&self, other: &Self) -> bool {
 		let hx = self.x + self.width / 2.0;
 		let hy = self.y - self.height / 2.0;
@@ -135,6 +126,7 @@ impl Player {
 					}
 				}
 			}
+			// FIXME: this all sux, 2220 and 500 make no sense
 			self.y += self.y_vel * dt;
 			if self.y - HALF_OBJECT_SIZE <= ground {
 				self.y = ground + HALF_OBJECT_SIZE;

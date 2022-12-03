@@ -1,12 +1,14 @@
+use level::load_gd_level_string;
 use sfml::graphics::{
 	Color, Rect, RectangleShape, RenderTarget, RenderWindow, Shape, Transformable,
 };
-use sfml::system::{Vector2, Vector2f};
+use sfml::system::Vector2;
 use sfml::window::{Event, Key};
 
+mod level;
 mod player;
 
-use player::{AxisBoundingBox, Object, Player, HALF_OBJECT_SIZE, OBJECT_SIZE};
+use player::{AxisBoundingBox, Player, OBJECT_SIZE};
 
 fn draw_box(window: &mut RenderWindow, bounding_box: &AxisBoundingBox, color: Color) {
 	let window_height = window.size().y as f32;
@@ -36,48 +38,8 @@ fn main() {
 
 	let mut player = Player::new();
 	player.x = 100.0;
-	let mut objects: Vec<Object> = Vec::new();
 
-	{
-		let mut object = Object::new();
-		object.x = 6.0 * OBJECT_SIZE;
-		object.y = HALF_OBJECT_SIZE;
-		objects.push(object);
-
-		// let mut object = Object::new();
-		// object.x = 6.0 * OBJECT_SIZE;
-		// object.y = HALF_OBJECT_SIZE + OBJECT_SIZE;
-		// objects.push(object);
-
-		let mut object = Object::new();
-		object.x = 7.0 * OBJECT_SIZE;
-		object.y = HALF_OBJECT_SIZE;
-		objects.push(object);
-
-		let mut object = Object::new();
-		object.x = 12.0 * OBJECT_SIZE;
-		object.y = HALF_OBJECT_SIZE + OBJECT_SIZE;
-		objects.push(object);
-
-		let mut object = Object::new();
-		object.x = 4.0 * OBJECT_SIZE;
-		object.y = HALF_OBJECT_SIZE + OBJECT_SIZE;
-		objects.push(object);
-
-		for i in 0..3 {
-			let mut object = Object::new();
-			object.x = (20.0 + i as f32) * OBJECT_SIZE;
-			object.y = HALF_OBJECT_SIZE;
-			object.death = true;
-			object.bounding_box = AxisBoundingBox {
-				x: -3.0,
-				y: 6.0,
-				width: 6.0,
-				height: 12.0,
-			};
-			objects.push(object);
-		}
-	}
+	let objects = load_gd_level_string(std::fs::read_to_string("stereo.txt").unwrap().as_str());
 
 	while window.is_open() {
 		while let Some(ev) = window.poll_event() {
@@ -128,7 +90,6 @@ fn main() {
 		shape.set_texture(&texture, true);
 		shape.set_origin((size / 2.0, size / 2.0));
 		shape.set_rotation(player.rotation);
-		// shape.set_fill_color(Color::GREEN);
 
 		window.draw(&shape);
 
@@ -136,6 +97,9 @@ fn main() {
 		draw_box(&mut window, &player.inner_bounding_box(), Color::BLUE);
 
 		for object in &objects {
+			if object.x > my_view.center().x + my_view.size().x / 2.0 {
+				continue;
+			}
 			let color = if object.death {
 				Color::RED
 			} else {
