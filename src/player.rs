@@ -99,7 +99,7 @@ impl Player {
 	}
 
 	pub fn inner_bounding_box(&self) -> AxisBoundingBox {
-		let size = OBJECT_SIZE / 3.0;
+		let size = OBJECT_SIZE * 0.29864;
 		AxisBoundingBox {
 			x: self.x - size / 2.0,
 			y: self.y + size / 2.0,
@@ -131,13 +131,13 @@ impl Player {
 						self.mode = PlayerMode::Cube;
 						break;
 					}
-					// only "step" up on half block diff
-					if self.y - HALF_OBJECT_SIZE
-						>= object.y
-							+ (object.bounding_box.height / 2.0 - OBJECT_SIZE * 0.29864).max(0.0)
-					{
-						if object.offset_bounding_box().y > ground && self.y_vel < 50.0 {
-							ground = object.offset_bounding_box().y;
+					let player_bottom = self.y - HALF_OBJECT_SIZE;
+					// only step up on 1/3 of a block
+					let object_top =
+						object.y + (object_bb.height / 2.0 - OBJECT_SIZE / 3.0).max(0.0);
+					if player_bottom >= object_top {
+						if object_bb.y > ground && self.y_vel < 50.0 {
+							ground = object_bb.y;
 						}
 					} else if self.inner_bounding_box().intersects(&object_bb) {
 						self.dead = true;
