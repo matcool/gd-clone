@@ -223,6 +223,9 @@ impl Player {
 				}
 			}
 			PlayerMode::Ship => {
+				let upper_velocity = 8.0 / player_size;
+				let lower_velocity = -6.4 / player_size;
+
 				let mut ship_accel = 0.8;
 				if self.is_holding {
 					ship_accel = -1.0;
@@ -231,6 +234,13 @@ impl Player {
 				let extra_boost = 0.4;
 
 				self.y_vel -= local_gravity * slow_dt * flip_gravity * ship_accel * extra_boost / player_size;
+
+				if self.y_vel <= lower_velocity {
+					self.y_vel = lower_velocity;
+				}
+				if self.y_vel >= upper_velocity {
+					self.y_vel = upper_velocity;
+				}
 			}
 		}
 
