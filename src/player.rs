@@ -74,6 +74,7 @@ pub struct Player {
 	mode: PlayerMode,
 	pub is_holding: bool,
 	is_rising: bool,
+	gravity: f32,
 }
 
 impl Player {
@@ -89,6 +90,7 @@ impl Player {
 			mode: PlayerMode::Cube,
 			is_holding: false,
 			is_rising: false,
+			gravity: 0.958199,
 		}
 	}
 
@@ -198,7 +200,9 @@ impl Player {
 	}
 
 	fn update_jump(&mut self, slow_dt: f32) {
-		let local_gravity = 0.958199;
+		let local_gravity = self.gravity;
+		// TODO: gravity is fixed for everything not cube
+
 		let flip_gravity = 1.0; // -1.0 when upside down
 		let player_size = 1.0;
 
@@ -242,19 +246,25 @@ impl Player {
 				if self.is_holding {
 					ship_accel = -1.0;
 				}
-				// TODO: player is falling
-				let extra_boost = 0.4;
+
+				if !self.is_holding && !self.is_falling() {
+					ship_accel = 1.2;
+				}
+
+				let mut extra_boost = 0.4;
+				if self.is_holding && self.is_falling() {
+					extra_boost = 0.5;
+				}
 
 				self.y_vel -=
 					local_gravity * slow_dt * flip_gravity * ship_accel * extra_boost / player_size;
 
-				if self.y_vel <= lower_velocity {
-					self.y_vel = lower_velocity;
-				}
-				if self.y_vel >= upper_velocity {
-					self.y_vel = upper_velocity;
-				}
+				self.y_vel = self.y_vel.clamp(lower_velocity, upper_velocity);
 			}
 		}
+	}
+
+	fn is_falling(&self) -> bool {
+		return self.y_vel < self.gravity * 2.0;
 	}
 }
