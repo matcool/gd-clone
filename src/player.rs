@@ -57,6 +57,7 @@ impl Object {
 	}
 }
 
+#[derive(PartialEq)]
 enum PlayerMode {
 	Cube,
 	Ship,
@@ -118,6 +119,7 @@ impl Player {
 		let dt = dt / SUBSTEPS as f32;
 		for _ in 0..SUBSTEPS {
 			let mut ground = 0.0;
+			let mut ceiling = 10.0 * OBJECT_SIZE;
 			for object in objects {
 				let object_bb = object.offset_bounding_box();
 				if self.bounding_box().intersects(&object_bb) {
@@ -137,6 +139,14 @@ impl Player {
 					// only step up on 1/3 of a block
 					let object_top =
 						object.y + (object_bb.height / 2.0 - OBJECT_SIZE / 3.0).max(0.0);
+
+					let player_top = self.y + HALF_OBJECT_SIZE;
+					let object_bottom = object_bb.y - object_bb.height;
+
+					if player_top < object_top && object_bottom < ceiling {
+						ceiling = object_bottom;
+					}
+
 					if player_bottom >= object_top {
 						if object_bb.y > ground && self.y_vel < 50.0 {
 							ground = object_bb.y;
@@ -147,10 +157,10 @@ impl Player {
 					}
 				}
 			}
-			
+
 			let rob_dt = dt * 60.0;
 			let slow_dt = rob_dt * 0.9;
-			
+
 			// for 1x
 			let player_speed = 0.9;
 			let x_velocity = 5.7700018;
@@ -165,6 +175,9 @@ impl Player {
 				self.y_vel = 0.0;
 				self.rotation = (self.rotation / 90.0).round() * 90.0;
 				self.on_ground = true;
+			} else if self.mode == PlayerMode::Ship && self.y + HALF_OBJECT_SIZE >= ceiling {
+				self.y = ceiling - HALF_OBJECT_SIZE;
+				self.y_vel = 0.0;
 			} else {
 				self.on_ground = false;
 				self.rotation += self.rotation_vel * dt;
@@ -172,8 +185,7 @@ impl Player {
 		}
 	}
 
-	pub fn jump(&mut self) {
-	}
+	pub fn jump(&mut self) {}
 
 	pub fn reset(&mut self) {
 		self.x = 7995.0 - OBJECT_SIZE * 10.0;
@@ -189,25 +201,25 @@ impl Player {
 		let local_gravity = 0.958199;
 		let flip_gravity = 1.0; // -1.0 when upside down
 		let player_size = 1.0;
-		
+
 		match self.mode {
 			PlayerMode::Cube => {
 				let jump_power = 11.180032; // m_jumpAccel
-		
+
 				let gravity_multiplier = 1.0;
-		
+
 				let should_jump = self.is_holding;
-		
+
 				if should_jump && self.on_ground {
 					self.on_ground = false;
 					self.is_rising = true;
-		
+
 					let y_velocity = jump_power * player_size;
 					self.y_vel = y_velocity;
 				} else {
 					if self.is_rising {
 						self.y_vel -= local_gravity * slow_dt * flip_gravity * gravity_multiplier;
-		
+
 						if local_gravity * 2.0 >= self.y_vel {
 							self.is_rising = false;
 						}
@@ -233,7 +245,8 @@ impl Player {
 				// TODO: player is falling
 				let extra_boost = 0.4;
 
-				self.y_vel -= local_gravity * slow_dt * flip_gravity * ship_accel * extra_boost / player_size;
+				self.y_vel -=
+					local_gravity * slow_dt * flip_gravity * ship_accel * extra_boost / player_size;
 
 				if self.y_vel <= lower_velocity {
 					self.y_vel = lower_velocity;
@@ -243,6 +256,5 @@ impl Player {
 				}
 			}
 		}
-
 	}
 }
