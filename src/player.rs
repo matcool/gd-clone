@@ -67,11 +67,12 @@ pub struct Player {
 	pub y: f32,
 	pub rotation: f32,
 	y_vel: f32,
-	y_accel: f32,
 	rotation_vel: f32,
 	dead: bool,
 	on_ground: bool,
 	mode: PlayerMode,
+	pub is_holding: bool,
+	is_rising: bool,
 }
 
 impl Player {
@@ -81,11 +82,12 @@ impl Player {
 			y: 0.0,
 			rotation: 0.0,
 			y_vel: 0.0,
-			y_accel: 0.0,
 			rotation_vel: 360.0,
 			dead: false,
 			on_ground: false,
 			mode: PlayerMode::Cube,
+			is_holding: false,
+			is_rising: false,
 		}
 	}
 
@@ -145,64 +147,92 @@ impl Player {
 					}
 				}
 			}
-			match self.mode {
-				PlayerMode::Cube => self.update_cube(dt, ground),
-				PlayerMode::Ship => self.update_ship(dt, ground),
+			
+			let rob_dt = dt * 60.0;
+			let slow_dt = rob_dt * 0.9;
+			
+			// for 1x
+			let player_speed = 0.9;
+			let x_velocity = 5.7700018;
+
+			self.update_jump(slow_dt);
+
+			self.x += x_velocity * player_speed * rob_dt;
+			self.y += self.y_vel * slow_dt;
+
+			if self.y - HALF_OBJECT_SIZE <= ground {
+				self.y = ground + HALF_OBJECT_SIZE;
+				self.y_vel = 0.0;
+				self.rotation = (self.rotation / 90.0).round() * 90.0;
+				self.on_ground = true;
+			} else {
+				self.on_ground = false;
+				self.rotation += self.rotation_vel * dt;
 			}
 		}
-		self.y_accel = 0.0;
 	}
 
 	pub fn jump(&mut self) {
-		match self.mode {
-			PlayerMode::Cube => {
-				if self.on_ground {
-					self.y_vel = 500.0;
-				}
-			}
-			PlayerMode::Ship => {
-				self.y_accel = 2000.0;
-			}
-		}
 	}
 
 	pub fn reset(&mut self) {
-		// self.x = 7995.0 - OBJECT_SIZE * 10.0;
-		// self.y = 135.0;
-		self.x = -60.0;
-		self.y = HALF_OBJECT_SIZE;
+		self.x = 7995.0 - OBJECT_SIZE * 10.0;
+		self.y = 135.0;
+		// self.x = -60.0;
+		// self.y = HALF_OBJECT_SIZE;
 		self.dead = false;
 		self.y_vel = 0.0;
 		self.mode = PlayerMode::Cube;
 	}
 
-	fn update_cube(&mut self, dt: f32, ground: f32) {
-		// FIXME: this all sux, 2220 and 500 make no sense
-		self.y += self.y_vel * dt;
-		if self.y - HALF_OBJECT_SIZE <= ground {
-			self.y = ground + HALF_OBJECT_SIZE;
-			self.y_vel = 0.0;
-			self.rotation = (self.rotation / 90.0).round() * 90.0;
-			self.on_ground = true;
-		} else {
-			self.on_ground = false;
-			self.y_vel -= 2200.0 * dt;
-			self.rotation += self.rotation_vel * dt;
-		}
-		self.x += 311.5776 * dt;
-	}
+	fn update_jump(&mut self, slow_dt: f32) {
+		let local_gravity = 0.958199;
+		let flip_gravity = 1.0; // -1.0 when upside down
+		let player_size = 1.0;
+		
+		match self.mode {
+			PlayerMode::Cube => {
+				let jump_power = 11.180032; // m_jumpAccel
+		
+				let gravity_multiplier = 1.0;
+		
+				let should_jump = self.is_holding;
+		
+				if should_jump && self.on_ground {
+					self.on_ground = false;
+					self.is_rising = true;
+		
+					let y_velocity = jump_power * player_size;
+					self.y_vel = y_velocity;
+				} else {
+					if self.is_rising {
+						self.y_vel -= local_gravity * slow_dt * flip_gravity * gravity_multiplier;
+		
+						if local_gravity * 2.0 >= self.y_vel {
+							self.is_rising = false;
+						}
+					} else {
+						if local_gravity * 2.0 > self.y_vel {
+							self.on_ground = false;
+						}
+						self.y_vel -= local_gravity * slow_dt * flip_gravity * gravity_multiplier;
+						if self.y_vel <= -15.0 {
+							self.y_vel = -15.0;
+						}
+					}
+				}
+			}
+			PlayerMode::Ship => {
+				let mut ship_accel = 0.8;
+				if self.is_holding {
+					ship_accel = -1.0;
+				}
+				// TODO: player is falling
+				let extra_boost = 0.4;
 
-	fn update_ship(&mut self, dt: f32, ground: f32) {
-		self.y += self.y_vel * dt;
-		if self.y - HALF_OBJECT_SIZE <= ground {
-			self.y = ground + HALF_OBJECT_SIZE;
-			self.y_vel = 0.0;
-			self.rotation = (self.rotation / 90.0).round() * 90.0;
-			self.on_ground = true;
-		} else {
-			self.on_ground = false;
+				self.y_vel -= local_gravity * slow_dt * flip_gravity * ship_accel * extra_boost / player_size;
+			}
 		}
-		self.y_vel += -1000.0 * dt + self.y_accel * dt;
-		self.x += 311.5776 * dt;
+
 	}
 }

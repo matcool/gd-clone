@@ -53,7 +53,10 @@ fn main() {
 			if Key::is_pressed(Key::Up)
 				|| sfml::window::mouse::Button::is_pressed(sfml::window::mouse::Button::Left)
 			{
+				player.is_holding = true;
 				player.jump();
+			} else {
+				player.is_holding = false;
 			}
 			if Key::is_pressed(Key::R) {
 				player.reset();
