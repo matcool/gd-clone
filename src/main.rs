@@ -66,7 +66,8 @@ fn main() {
 		player.update(1.0 / 60.0, objects.as_slice());
 
 		let window_size: Vector2<f32> = window.size().as_other();
-		let scale = 2.0;
+		// fit 11 objects vertically
+		let scale = window_size.y / (OBJECT_SIZE * 11.0);
 		let scaled_window_size = window_size / (2.0 * scale);
 		let mut my_view = sfml::graphics::View::new(
 			Vector2f::new(
