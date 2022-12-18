@@ -150,7 +150,7 @@ impl Player {
 					}
 
 					if player_bottom >= object_top {
-						if object_bb.y > ground && self.y_vel < 50.0 {
+						if object_bb.y > ground && self.y_vel < 1.0 {
 							ground = object_bb.y;
 						}
 					} else if self.inner_bounding_box().intersects(&object_bb) {
@@ -177,7 +177,7 @@ impl Player {
 				self.y_vel = 0.0;
 				self.rotation = (self.rotation / 90.0).round() * 90.0;
 				self.on_ground = true;
-			} else if self.mode == PlayerMode::Ship && self.y + HALF_OBJECT_SIZE >= ceiling {
+			} else if self.mode == PlayerMode::Ship && self.y + HALF_OBJECT_SIZE >= ceiling && self.y_vel > 0.0 {
 				self.y = ceiling - HALF_OBJECT_SIZE;
 				self.y_vel = 0.0;
 			} else {
@@ -190,10 +190,10 @@ impl Player {
 	pub fn jump(&mut self) {}
 
 	pub fn reset(&mut self) {
-		self.x = 7995.0 - OBJECT_SIZE * 10.0;
-		self.y = 135.0;
-		// self.x = -60.0;
-		// self.y = HALF_OBJECT_SIZE;
+		// self.x = 7995.0 - OBJECT_SIZE * 10.0;
+		// self.y = 135.0;
+		self.x = -60.0;
+		self.y = HALF_OBJECT_SIZE;
 		self.dead = false;
 		self.y_vel = 0.0;
 		self.mode = PlayerMode::Cube;
