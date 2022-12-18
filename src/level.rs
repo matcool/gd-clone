@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::player::{AxisBoundingBox, Object};
+use crate::player::{AxisBoundingBox, Object, Player, HALF_OBJECT_SIZE};
 
 fn parse_hitboxes() -> HashMap<i32, AxisBoundingBox> {
 	let mut hitboxes = HashMap::new();
@@ -22,7 +22,9 @@ fn parse_hitboxes() -> HashMap<i32, AxisBoundingBox> {
 	hitboxes
 }
 
-pub fn load_gd_level_string(string: &str) -> Vec<Object> {
+pub fn load_gd_level_string(string: &str) -> (Vec<Object>, Vec<(f32, f32)>) {
+	let mut start_positions = Vec::new();
+	start_positions.push((-60.0, HALF_OBJECT_SIZE));
 	let mut objects = Vec::new();
 	let hitboxes = parse_hitboxes();
 	for object in string.split(';').skip(1) {
@@ -48,6 +50,9 @@ pub fn load_gd_level_string(string: &str) -> Vec<Object> {
 				_ => {}
 			}
 		}
+		if object.id == 31 {
+			start_positions.push((object.x, object.y));
+		}
 		if (22..34).contains(&object.id) {
 			continue;
 		}
@@ -55,5 +60,40 @@ pub fn load_gd_level_string(string: &str) -> Vec<Object> {
 			objects.push(object);
 		}
 	}
-	objects
+	(objects, start_positions)
+}
+
+pub struct Level {
+	pub player: Player,
+	pub objects: Vec<Object>,
+	start_positions: Vec<(f32, f32)>,
+	start_pos_index: usize,
+}
+
+impl Level {
+	pub fn new(file_name: &str) -> Self {
+		let (objects, start_positions) =
+			load_gd_level_string(std::fs::read_to_string(file_name).unwrap().as_str());
+		Self {
+			player: Player::new(),
+			objects,
+			start_positions,
+			start_pos_index: 0,
+		}
+	}
+
+	pub fn reset(&mut self) {
+		self.player.reset();
+		let start_pos = self.start_positions[self.start_pos_index];
+		self.player.x = start_pos.0;
+		self.player.y = start_pos.1;
+	}
+
+	pub fn update(&mut self, dt: f32) {
+		self.player.update(dt, &self.objects);
+	}
+
+	pub fn next_start_pos(&mut self) {
+		self.start_pos_index = (self.start_pos_index + 1) % self.start_positions.len();
+	}
 }

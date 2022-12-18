@@ -1,4 +1,4 @@
-use level::load_gd_level_string;
+use level::{load_gd_level_string, Level};
 use sfml::graphics::{
 	Color, Rect, RectangleShape, RenderTarget, RenderWindow, Shape, Transformable,
 };
@@ -37,34 +37,38 @@ fn main() {
 	let texture = sfml::graphics::Texture::from_file("player.png").unwrap();
 	let ship_texture = sfml::graphics::Texture::from_file("ship.png").unwrap();
 
-	let mut player = Player::new();
-	player.x = 100.0;
+	let mut level = Level::new("acctest.txt");
+	level.reset();
 
-	let objects = load_gd_level_string(std::fs::read_to_string("acctest.txt").unwrap().as_str());
+	window.set_key_repeat_enabled(false);
 
 	while window.is_open() {
 		while let Some(ev) = window.poll_event() {
 			match ev {
 				Event::Closed => window.close(),
+				Event::KeyPressed { code: key, .. } => match key {
+					Key::R => level.reset(),
+					Key::Right => {
+						level.next_start_pos();
+						level.reset();
+					}
+					_ => {}
+				},
 				_ => {}
 			}
 		}
 
 		if window.has_focus() {
-			if Key::is_pressed(Key::Up)
+			if Key::Up.is_pressed()
 				|| sfml::window::mouse::Button::is_pressed(sfml::window::mouse::Button::Left)
 			{
-				player.is_holding = true;
-				player.jump();
+				level.player.is_holding = true;
 			} else {
-				player.is_holding = false;
-			}
-			if Key::is_pressed(Key::R) {
-				player.reset();
+				level.player.is_holding = false;
 			}
 		}
 
-		player.update(1.0 / 60.0, objects.as_slice());
+		level.update(1.0 / 60.0);
 
 		let window_size: Vector2<f32> = window.size().as_other();
 		// fit 11 objects vertically
@@ -72,13 +76,13 @@ fn main() {
 		let scaled_window_size = window_size / (2.0 * scale);
 		let mut my_view = sfml::graphics::View::new(
 			Vector2f::new(
-				scaled_window_size.x + player.x - window_size.x / 6.0,
+				scaled_window_size.x + level.player.x - scaled_window_size.x / 2.0,
 				window_size.y - scaled_window_size.y + 10.0,
 			),
 			window_size / scale,
 		);
 		let following_player_y =
-			window_size.y - scaled_window_size.y - player.y + scaled_window_size.y;
+			window_size.y - scaled_window_size.y - level.player.y + scaled_window_size.y;
 		if following_player_y < my_view.center().y {
 			let center = my_view.center();
 			my_view.set_center(Vector2f::new(center.x, following_player_y));
@@ -89,24 +93,24 @@ fn main() {
 
 		let size = OBJECT_SIZE;
 		let mut shape = RectangleShape::from_rect(Rect::new(
-			player.x,
-			window.size().y as f32 - player.y,
+			level.player.x,
+			window.size().y as f32 - level.player.y,
 			size,
 			size,
 		));
-		match player.mode {
+		match level.player.mode {
 			player::PlayerMode::Cube => shape.set_texture(&texture, true),
 			player::PlayerMode::Ship => shape.set_texture(&ship_texture, false),
 		}
 		shape.set_origin((size / 2.0, size / 2.0));
-		shape.set_rotation(player.rotation);
+		shape.set_rotation(level.player.rotation);
 
 		window.draw(&shape);
 
-		draw_box(&mut window, &player.bounding_box(), Color::GREEN);
-		draw_box(&mut window, &player.inner_bounding_box(), Color::BLUE);
+		draw_box(&mut window, &level.player.bounding_box(), Color::GREEN);
+		draw_box(&mut window, &level.player.inner_bounding_box(), Color::BLUE);
 
-		for object in &objects {
+		for object in &level.objects {
 			if object.x > my_view.center().x + my_view.size().x / 2.0 {
 				continue;
 			}

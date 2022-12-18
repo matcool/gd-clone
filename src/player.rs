@@ -104,7 +104,7 @@ impl Player {
 	}
 
 	pub fn inner_bounding_box(&self) -> AxisBoundingBox {
-		let size = OBJECT_SIZE * 0.29864;
+		let size = OBJECT_SIZE * 0.3;
 		AxisBoundingBox {
 			x: self.x - size / 2.0,
 			y: self.y + size / 2.0,
@@ -178,7 +178,10 @@ impl Player {
 				self.y_vel = 0.0;
 				self.rotation = (self.rotation / 90.0).round() * 90.0;
 				self.on_ground = true;
-			} else if self.mode == PlayerMode::Ship && self.y + HALF_OBJECT_SIZE >= ceiling && self.y_vel > 0.0 {
+			} else if self.mode == PlayerMode::Ship
+				&& self.y + HALF_OBJECT_SIZE >= ceiling
+				&& self.y_vel > 0.0
+			{
 				self.y = ceiling - HALF_OBJECT_SIZE;
 				self.y_vel = 0.0;
 			} else {
