@@ -48,6 +48,9 @@ pub fn load_gd_level_string(string: &str) -> Vec<Object> {
 				_ => {}
 			}
 		}
+		if (22..34).contains(&object.id) {
+			continue;
+		}
 		if has_hitbox {
 			objects.push(object);
 		}
