@@ -218,17 +218,16 @@ impl Player {
 					self.on_ground = false;
 					self.is_rising = true;
 
-					let y_velocity = jump_power * player_size;
-					self.y_vel = y_velocity;
+					self.y_vel = flip_gravity * jump_power * player_size;
 				} else {
 					if self.is_rising {
 						self.y_vel -= local_gravity * slow_dt * flip_gravity * gravity_multiplier;
 
-						if local_gravity * 2.0 >= self.y_vel {
+						if self.y_vel <= self.gravity * 2.0 {
 							self.is_rising = false;
 						}
 					} else {
-						if local_gravity * 2.0 > self.y_vel {
+						if self.y_vel < self.gravity * 2.0 {
 							self.on_ground = false;
 						}
 						self.y_vel -= local_gravity * slow_dt * flip_gravity * gravity_multiplier;

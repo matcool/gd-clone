@@ -39,7 +39,7 @@ fn main() {
 	let mut player = Player::new();
 	player.x = 100.0;
 
-	let objects = load_gd_level_string(std::fs::read_to_string("stereo.txt").unwrap().as_str());
+	let objects = load_gd_level_string(std::fs::read_to_string("acctest.txt").unwrap().as_str());
 
 	while window.is_open() {
 		while let Some(ev) = window.poll_event() {
