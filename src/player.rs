@@ -58,7 +58,7 @@ impl Object {
 }
 
 #[derive(PartialEq)]
-enum PlayerMode {
+pub enum PlayerMode {
 	Cube,
 	Ship,
 }
@@ -71,7 +71,7 @@ pub struct Player {
 	rotation_vel: f32,
 	dead: bool,
 	on_ground: bool,
-	mode: PlayerMode,
+	pub mode: PlayerMode,
 	pub is_holding: bool,
 	is_rising: bool,
 	gravity: f32,
@@ -131,6 +131,7 @@ impl Player {
 					}
 					if object.id == 13 {
 						self.mode = PlayerMode::Ship;
+						self.rotation = 0.0;
 						break;
 					}
 					if object.id == 12 {
@@ -182,7 +183,9 @@ impl Player {
 				self.y_vel = 0.0;
 			} else {
 				self.on_ground = false;
-				self.rotation += self.rotation_vel * dt;
+				if self.mode == PlayerMode::Cube {
+					self.rotation += self.rotation_vel * dt;
+				}
 			}
 		}
 	}

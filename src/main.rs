@@ -35,6 +35,7 @@ fn main() {
 	window.set_framerate_limit(60);
 
 	let texture = sfml::graphics::Texture::from_file("player.png").unwrap();
+	let ship_texture = sfml::graphics::Texture::from_file("ship.png").unwrap();
 
 	let mut player = Player::new();
 	player.x = 100.0;
@@ -93,7 +94,10 @@ fn main() {
 			size,
 			size,
 		));
-		shape.set_texture(&texture, true);
+		match player.mode {
+			player::PlayerMode::Cube => shape.set_texture(&texture, true),
+			player::PlayerMode::Ship => shape.set_texture(&ship_texture, false),
+		}
 		shape.set_origin((size / 2.0, size / 2.0));
 		shape.set_rotation(player.rotation);
 
