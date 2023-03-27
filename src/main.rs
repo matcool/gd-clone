@@ -8,7 +8,7 @@ use sfml::window::{Event, Key};
 mod level;
 mod player;
 
-use player::{AxisBoundingBox, OBJECT_SIZE};
+use player::{AxisBoundingBox, PlayerMode, OBJECT_SIZE};
 
 fn draw_box(window: &mut RenderWindow, bounding_box: &AxisBoundingBox, color: Color) {
 	let window_height = window.size().y as f32;
@@ -20,7 +20,7 @@ fn draw_box(window: &mut RenderWindow, bounding_box: &AxisBoundingBox, color: Co
 	));
 	shape.set_fill_color(Color::TRANSPARENT);
 	shape.set_outline_color(color);
-	shape.set_outline_thickness(-2.0);
+	shape.set_outline_thickness(-1.5);
 
 	window.draw(&shape);
 }
@@ -72,22 +72,21 @@ fn main() {
 		level.update(1.0 / 60.0);
 
 		let window_size: Vector2<f32> = window.size().as_other();
-		// fit 11 objects vertically
-		let scale = window_size.y / (OBJECT_SIZE * 11.0);
-		let scaled_window_size = window_size / (2.0 * scale);
-		let mut my_view = sfml::graphics::View::new(
-			Vector2f::new(
-				scaled_window_size.x + level.player.x - scaled_window_size.x / 2.0,
-				window_size.y - scaled_window_size.y + 10.0,
-			),
+		let scale = window_size.y / (OBJECT_SIZE * 10.588);
+		let scaled_window_size = window_size / scale;
+
+		let camera_x = level.player.x + scaled_window_size.x / 2.0 - 7.0 * OBJECT_SIZE;
+		let mut camera_y =
+			(scaled_window_size.y / 2.0 - 3.0 * OBJECT_SIZE).max(level.player.y - OBJECT_SIZE);
+		
+		if level.player.mode == PlayerMode::Ship {
+			camera_y = level.player.portal_y.max(5.0 * OBJECT_SIZE);
+		}
+
+		let my_view = sfml::graphics::View::new(
+			Vector2f::new(camera_x, window_size.y - camera_y),
 			window_size / scale,
 		);
-		let following_player_y =
-			window_size.y - scaled_window_size.y - level.player.y + scaled_window_size.y;
-		if following_player_y < my_view.center().y {
-			let center = my_view.center();
-			my_view.set_center(Vector2f::new(center.x, following_player_y));
-		}
 		window.set_view(&my_view);
 
 		window.clear(Color::BLACK);

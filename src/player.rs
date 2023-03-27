@@ -41,7 +41,7 @@ impl Object {
 	pub fn new() -> Self {
 		Self {
 			x: 0.0,
-			y: HALF_OBJECT_SIZE,
+			y: 0.0,
 			bounding_box: AxisBoundingBox {
 				x: -HALF_OBJECT_SIZE,
 				y: HALF_OBJECT_SIZE,
@@ -75,6 +75,7 @@ pub struct Player {
 	pub is_holding: bool,
 	is_rising: bool,
 	gravity: f32,
+	pub portal_y: f32,
 }
 
 impl Player {
@@ -91,6 +92,7 @@ impl Player {
 			is_holding: false,
 			is_rising: false,
 			gravity: 0.958199,
+			portal_y: 0.0,
 		}
 	}
 
@@ -113,6 +115,19 @@ impl Player {
 		}
 	}
 
+	pub fn ground_height(&self) -> f32 {
+		if self.mode == PlayerMode::Ship {
+			((self.portal_y / OBJECT_SIZE).floor() * OBJECT_SIZE).max(5.0 * OBJECT_SIZE)
+				- 5.0 * OBJECT_SIZE
+		} else {
+			0.0
+		}
+	}
+
+	pub fn ceiling_height(&self) -> f32 {
+		self.ground_height() + 10.0 * OBJECT_SIZE
+	}
+
 	pub fn update(&mut self, dt: f32, objects: &[Object]) {
 		if self.dead {
 			return;
@@ -120,8 +135,8 @@ impl Player {
 		const SUBSTEPS: i32 = 4;
 		let dt = dt / SUBSTEPS as f32;
 		for _ in 0..SUBSTEPS {
-			let mut ground = 0.0;
-			let mut ceiling = 10.0 * OBJECT_SIZE;
+			let mut ground = self.ground_height();
+			let mut ceiling = self.ceiling_height();
 			for object in objects {
 				let object_bb = object.offset_bounding_box();
 				if self.bounding_box().intersects(&object_bb) {
@@ -132,6 +147,8 @@ impl Player {
 					if object.id == 13 {
 						self.mode = PlayerMode::Ship;
 						self.rotation = 0.0;
+						self.portal_y =
+							((object.y / OBJECT_SIZE).floor() * OBJECT_SIZE).max(OBJECT_SIZE * 5.0);
 						break;
 					}
 					if object.id == 12 {

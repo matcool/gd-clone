@@ -6,8 +6,12 @@ use crate::player::{AxisBoundingBox, Object, Player, HALF_OBJECT_SIZE};
 
 fn parse_hitboxes() -> HashMap<i32, AxisBoundingBox> {
 	let mut hitboxes = HashMap::new();
-	let parsed: serde_json::Value =
-		serde_json::from_str(std::fs::read_to_string("res/hitboxes.json").unwrap().as_str()).unwrap();
+	let parsed: serde_json::Value = serde_json::from_str(
+		std::fs::read_to_string("res/hitboxes.json")
+			.unwrap()
+			.as_str(),
+	)
+	.unwrap();
 	for (key, value) in parsed.as_object().unwrap() {
 		let id: i32 = key.parse().unwrap();
 		let value = value.as_object().unwrap();
@@ -26,7 +30,7 @@ fn parse_hitboxes() -> HashMap<i32, AxisBoundingBox> {
 
 pub fn load_gd_level_string(string: &str) -> (Vec<Object>, Vec<(f32, f32)>) {
 	let mut start_positions = Vec::new();
-	start_positions.push((-60.0, HALF_OBJECT_SIZE));
+	start_positions.push((0.0, HALF_OBJECT_SIZE));
 	let mut objects = Vec::new();
 	let hitboxes = parse_hitboxes();
 	for object in string.split(';').skip(1) {
