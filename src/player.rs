@@ -32,6 +32,7 @@ pub struct Object {
 	pub bounding_box: AxisBoundingBox,
 	pub death: bool,
 	pub id: i32,
+	pub solid: bool,
 }
 
 pub const OBJECT_SIZE: f32 = 30.0;
@@ -50,6 +51,7 @@ impl Object {
 			},
 			death: false,
 			id: -1,
+			solid: true,
 		}
 	}
 	pub fn offset_bounding_box(&self) -> AxisBoundingBox {
@@ -153,23 +155,20 @@ impl Player {
 						self.rotation = 0.0;
 						self.portal_y =
 							((object.y / OBJECT_SIZE).floor() * OBJECT_SIZE).max(OBJECT_SIZE * 5.0);
-						break;
 					}
 					if object.id == 12 {
 						self.mode = PlayerMode::Cube;
-						break;
 					}
 					if object.id == 35 {
 						// yellow pad, made up value
 						self.y_vel = 16.0;
-						break;
 					}
-					if object.id == 36 {
-						if self.is_buffering {
-							// made up physics
-							self.y_vel = 11.5;
-							self.is_buffering = false;
-						}
+					if object.id == 36 && self.is_buffering {
+						// made up physics
+						self.y_vel = 11.5;
+						self.is_buffering = false;
+					}
+					if !object.solid {
 						continue;
 					}
 					let player_bottom = self.y - HALF_OBJECT_SIZE;

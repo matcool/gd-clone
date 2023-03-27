@@ -1,6 +1,10 @@
-use std::{collections::HashMap, io::Read};
+use std::{
+	collections::{HashMap, HashSet},
+	io::Read,
+};
 
 use base64::Engine;
+use serde::Deserialize;
 
 use crate::player::{AxisBoundingBox, Object, Player, HALF_OBJECT_SIZE};
 
@@ -28,11 +32,26 @@ fn parse_hitboxes() -> HashMap<i32, AxisBoundingBox> {
 	hitboxes
 }
 
+#[derive(Deserialize)]
+struct ObjectTypesInfo {
+	kill: HashSet<i32>,
+	portal: HashSet<i32>,
+	special: HashSet<i32>,
+}
+
+fn get_object_types() -> ObjectTypesInfo {
+	serde_json::from_str(include_str!("../res/types.json")).unwrap()
+}
+
 pub fn load_gd_level_string(string: &str) -> (Vec<Object>, Vec<(f32, f32)>) {
+	let hitboxes = parse_hitboxes();
+	let object_types = get_object_types();
+
 	let mut start_positions = Vec::new();
 	start_positions.push((0.0, HALF_OBJECT_SIZE));
+
 	let mut objects = Vec::new();
-	let hitboxes = parse_hitboxes();
+
 	for object in string.split(';').skip(1) {
 		let keys = object.split(',').step_by(2);
 		let values = object.split(',').skip(1).step_by(2);
@@ -43,9 +62,9 @@ pub fn load_gd_level_string(string: &str) -> (Vec<Object>, Vec<(f32, f32)>) {
 				"1" => {
 					let id = value.parse().unwrap();
 					object.id = id;
-					if id == 8 {
-						object.death = true;
-					}
+					object.death = object_types.kill.contains(&object.id);
+					object.solid = !object_types.special.contains(&object.id)
+						&& !object_types.portal.contains(&object.id);
 					if let Some(hitbox) = hitboxes.get(&id) {
 						has_hitbox = true;
 						object.bounding_box = hitbox.clone();

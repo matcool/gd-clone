@@ -117,11 +117,15 @@ fn main() {
 		draw_box(&mut window, &level.player.inner_bounding_box(), Color::BLUE);
 
 		for object in &level.objects {
-			if object.x > my_view.center().x + my_view.size().x / 2.0 {
+			if object.x > my_view.center().x + my_view.size().x / 2.0
+				|| object.x < my_view.center().x - my_view.size().x / 2.0
+			{
 				continue;
 			}
 			let color = if object.death {
 				Color::RED
+			} else if !object.solid {
+				Color::YELLOW
 			} else {
 				Color::BLUE
 			};
