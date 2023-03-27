@@ -78,7 +78,7 @@ fn main() {
 		let camera_x = level.player.x + scaled_window_size.x / 2.0 - 7.0 * OBJECT_SIZE;
 		let mut camera_y =
 			(scaled_window_size.y / 2.0 - 3.0 * OBJECT_SIZE).max(level.player.y - OBJECT_SIZE);
-		
+
 		if level.player.mode == PlayerMode::Ship {
 			camera_y = level.player.portal_y.max(5.0 * OBJECT_SIZE);
 		}

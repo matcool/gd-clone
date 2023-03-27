@@ -12,8 +12,8 @@ impl AxisBoundingBox {
 		let hy = self.y - self.height / 2.0;
 		let hxo = other.x + other.width / 2.0;
 		let hyo = other.y - other.height / 2.0;
-		(hx - hxo).abs() <= (self.width + other.width) / 2.0
-			&& (hy - hyo).abs() <= (self.height + other.height) / 2.0
+		(hx - hxo).abs() < (self.width + other.width) / 2.0
+			&& (hy - hyo).abs() < (self.height + other.height) / 2.0
 	}
 
 	pub fn offset_by(&self, x: f32, y: f32) -> Self {
