@@ -170,13 +170,19 @@ impl Player {
 
 			self.update_jump(slow_dt);
 
-			self.x += x_velocity * player_speed * rob_dt;
-			self.y += self.y_vel * slow_dt;
+			let dx = x_velocity * player_speed * rob_dt;
+			let dy = self.y_vel * slow_dt;
+			self.x += dx;
+			self.y += dy;
 
 			if self.y - HALF_OBJECT_SIZE <= ground {
 				self.y = ground + HALF_OBJECT_SIZE;
 				self.y_vel = 0.0;
-				self.rotation = (self.rotation / 90.0).round() * 90.0;
+				if self.mode == PlayerMode::Cube {
+					self.rotation = (self.rotation / 90.0).round() * 90.0;
+				} else {
+					self.rotation = 0.0;
+				}
 				self.on_ground = true;
 			} else if self.mode == PlayerMode::Ship
 				&& self.y + HALF_OBJECT_SIZE >= ceiling
@@ -184,22 +190,20 @@ impl Player {
 			{
 				self.y = ceiling - HALF_OBJECT_SIZE;
 				self.y_vel = 0.0;
+				self.rotation = 0.0;
 			} else {
 				self.on_ground = false;
 				if self.mode == PlayerMode::Cube {
 					self.rotation += self.rotation_vel * dt;
+				} else {
+					// dx dy tan-1 to get angle
+					self.rotation = -(dy / dx).atan().to_degrees();
 				}
 			}
 		}
 	}
 
-	pub fn jump(&mut self) {}
-
 	pub fn reset(&mut self) {
-		// self.x = 7995.0 - OBJECT_SIZE * 10.0;
-		// self.y = 135.0;
-		self.x = -60.0;
-		self.y = HALF_OBJECT_SIZE;
 		self.dead = false;
 		self.y_vel = 0.0;
 		self.mode = PlayerMode::Cube;
@@ -270,6 +274,6 @@ impl Player {
 	}
 
 	fn is_falling(&self) -> bool {
-		return self.y_vel < self.gravity * 2.0;
+		self.y_vel < self.gravity * 2.0
 	}
 }

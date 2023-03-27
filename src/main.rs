@@ -1,4 +1,4 @@
-use level::{load_gd_level_string, Level};
+use level::Level;
 use sfml::graphics::{
 	Color, Rect, RectangleShape, RenderTarget, RenderWindow, Shape, Transformable,
 };
@@ -8,7 +8,7 @@ use sfml::window::{Event, Key};
 mod level;
 mod player;
 
-use player::{AxisBoundingBox, Player, OBJECT_SIZE};
+use player::{AxisBoundingBox, OBJECT_SIZE};
 
 fn draw_box(window: &mut RenderWindow, bounding_box: &AxisBoundingBox, color: Color) {
 	let window_height = window.size().y as f32;
