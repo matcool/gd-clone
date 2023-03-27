@@ -7,7 +7,7 @@ use crate::player::{AxisBoundingBox, Object, Player, HALF_OBJECT_SIZE};
 fn parse_hitboxes() -> HashMap<i32, AxisBoundingBox> {
 	let mut hitboxes = HashMap::new();
 	let parsed: serde_json::Value =
-		serde_json::from_str(std::fs::read_to_string("hitboxes.json").unwrap().as_str()).unwrap();
+		serde_json::from_str(std::fs::read_to_string("res/hitboxes.json").unwrap().as_str()).unwrap();
 	for (key, value) in parsed.as_object().unwrap() {
 		let id: i32 = key.parse().unwrap();
 		let value = value.as_object().unwrap();

@@ -36,8 +36,8 @@ fn main() {
 	);
 	window.set_framerate_limit(60);
 
-	let texture = sfml::graphics::Texture::from_file("player.png").unwrap();
-	let ship_texture = sfml::graphics::Texture::from_file("ship.png").unwrap();
+	let texture = sfml::graphics::Texture::from_file("res/player.png").unwrap();
+	let ship_texture = sfml::graphics::Texture::from_file("res/ship.png").unwrap();
 
 	level.reset();
 
