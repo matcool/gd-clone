@@ -155,6 +155,11 @@ impl Player {
 						self.mode = PlayerMode::Cube;
 						break;
 					}
+					if object.id == 35 {
+						// yellow pad, made up value
+						self.y_vel = 16.0;
+						break;
+					}
 					let player_bottom = self.y - HALF_OBJECT_SIZE;
 					// only step up on 1/3 of a block
 					let object_top =
