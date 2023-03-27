@@ -75,7 +75,10 @@ pub struct Player {
 	pub is_holding: bool,
 	is_rising: bool,
 	gravity: f32,
+	// this should be on Level, but player doesnt have access to it yet
 	pub portal_y: f32,
+	// if just started clicking and can hit orb
+	is_buffering: bool,
 }
 
 impl Player {
@@ -93,6 +96,7 @@ impl Player {
 			is_rising: false,
 			gravity: 0.958199,
 			portal_y: 0.0,
+			is_buffering: false,
 		}
 	}
 
@@ -159,6 +163,14 @@ impl Player {
 						// yellow pad, made up value
 						self.y_vel = 16.0;
 						break;
+					}
+					if object.id == 36 {
+						if self.is_buffering {
+							// made up physics
+							self.y_vel = 11.5;
+							self.is_buffering = false;
+						}
+						continue;
 					}
 					let player_bottom = self.y - HALF_OBJECT_SIZE;
 					// only step up on 1/3 of a block
@@ -246,6 +258,10 @@ impl Player {
 
 				let should_jump = self.is_holding;
 
+				if self.on_ground {
+					self.is_buffering = false;
+				}
+
 				if should_jump && self.on_ground {
 					self.on_ground = false;
 					self.is_rising = true;
@@ -297,5 +313,15 @@ impl Player {
 
 	fn is_falling(&self) -> bool {
 		self.y_vel < self.gravity * 2.0
+	}
+
+	pub fn press_jump(&mut self) {
+		self.is_holding = true;
+		self.is_buffering = true;
+	}
+
+	pub fn release_jump(&mut self) {
+		self.is_holding = false;
+		self.is_buffering = false;
 	}
 }

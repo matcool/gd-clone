@@ -3,7 +3,7 @@ use sfml::graphics::{
 	Color, Rect, RectangleShape, RenderTarget, RenderWindow, Shape, Transformable,
 };
 use sfml::system::{Vector2, Vector2f};
-use sfml::window::{Event, Key};
+use sfml::window::{mouse, Event, Key};
 
 mod level;
 mod player;
@@ -43,6 +43,8 @@ fn main() {
 
 	window.set_key_repeat_enabled(false);
 
+	let mut was_pressing = false;
+
 	while window.is_open() {
 		while let Some(ev) = window.poll_event() {
 			match ev {
@@ -60,12 +62,16 @@ fn main() {
 		}
 
 		if window.has_focus() {
-			if Key::Up.is_pressed()
-				|| sfml::window::mouse::Button::is_pressed(sfml::window::mouse::Button::Left)
-			{
-				level.player.is_holding = true;
+			if Key::Up.is_pressed() || mouse::Button::is_pressed(mouse::Button::Left) {
+				if !was_pressing {
+					level.player.press_jump();
+				}
+				was_pressing = true;
 			} else {
-				level.player.is_holding = false;
+				if was_pressing {
+					level.player.release_jump();
+				}
+				was_pressing = false;
 			}
 		}
 
