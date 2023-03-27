@@ -26,6 +26,8 @@ fn draw_box(window: &mut RenderWindow, bounding_box: &AxisBoundingBox, color: Co
 }
 
 fn main() {
+	let mut level = Level::from_gmd(std::env::args().nth(1).unwrap().as_str());
+
 	let mut window = sfml::graphics::RenderWindow::new(
 		(896, 504),
 		"Hewwo",
@@ -37,7 +39,6 @@ fn main() {
 	let texture = sfml::graphics::Texture::from_file("player.png").unwrap();
 	let ship_texture = sfml::graphics::Texture::from_file("ship.png").unwrap();
 
-	let mut level = Level::new("acctest.txt");
 	level.reset();
 
 	window.set_key_repeat_enabled(false);

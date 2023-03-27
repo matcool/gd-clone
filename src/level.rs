@@ -1,4 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, io::Read};
+
+use base64::Engine;
 
 use crate::player::{AxisBoundingBox, Object, Player, HALF_OBJECT_SIZE};
 
@@ -63,6 +65,22 @@ pub fn load_gd_level_string(string: &str) -> (Vec<Object>, Vec<(f32, f32)>) {
 	(objects, start_positions)
 }
 
+fn load_gmd(string: &str) -> (Vec<Object>, Vec<(f32, f32)>) {
+	let pos = string.find("<k>k4</k><s>").unwrap();
+	let string = &string[pos + 12..];
+	let pos = string.find("</s>").unwrap();
+	let string = &string[..pos].trim().trim_end_matches('=');
+
+	let decoded = base64::engine::general_purpose::URL_SAFE_NO_PAD
+		.decode(string)
+		.unwrap();
+	let mut gz = flate2::read::GzDecoder::new(decoded.as_slice());
+	let mut string = String::new();
+	gz.read_to_string(&mut string).unwrap();
+
+	load_gd_level_string(string.as_str())
+}
+
 pub struct Level {
 	pub player: Player,
 	pub objects: Vec<Object>,
@@ -71,9 +89,9 @@ pub struct Level {
 }
 
 impl Level {
-	pub fn new(file_name: &str) -> Self {
+	pub fn from_gmd(file_name: &str) -> Self {
 		let (objects, start_positions) =
-			load_gd_level_string(std::fs::read_to_string(file_name).unwrap().as_str());
+			load_gmd(std::fs::read_to_string(file_name).unwrap().as_str());
 		Self {
 			player: Player::new(),
 			objects,
