@@ -165,7 +165,7 @@ impl Player {
 					}
 					if object.id == 36 && self.is_buffering {
 						// made up physics
-						self.y_vel = 11.5;
+						self.y_vel = 11.180032;
 						self.is_buffering = false;
 					}
 					if !object.solid {
