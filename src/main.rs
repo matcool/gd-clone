@@ -132,6 +132,14 @@ fn main() {
 			draw_box(&mut window, &object.offset_bounding_box(), color);
 		}
 
+		draw_box(&mut window, &AxisBoundingBox {
+			x: camera_x - window_size.x / 2.0,
+			y: level.player.ground_height(),
+			width: window_size.x,
+			height: 100.0
+		}, Color::WHITE);
+
+
 		window.display();
 	}
 }
