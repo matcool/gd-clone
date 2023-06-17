@@ -63,6 +63,22 @@ impl Object {
 pub enum PlayerMode {
 	Cube,
 	Ship,
+	Ufo,
+	Ball,
+	Robot,
+	Spider,
+}
+
+#[derive(PartialEq)]
+pub enum PortalIds {
+	Cube = 12,
+	Ship = 13,
+	Ball = 47,
+	Ufo = 111,
+	Mini = 101,
+	NotMini = 99,
+	Dual = 286,
+	Single = 287
 }
 
 pub struct Player {
@@ -134,6 +150,62 @@ impl Player {
 		self.ground_height() + 10.0 * OBJECT_SIZE
 	}
 
+	pub fn collision(&mut self, objects: &[Object]) -> Option<(f32, f32)> {
+		let mut ground = self.ground_height();
+		let mut ceiling = self.ceiling_height();
+		for object in objects {
+			let object_bb = object.offset_bounding_box();
+			if self.bounding_box().intersects(&object_bb) {
+				if object.death {
+					self.dead = true;
+					return None;
+				}
+				if object.id == PortalIds::Ship as i32 {
+					self.mode = PlayerMode::Ship;
+					self.rotation = 0.0;
+					self.portal_y =
+						((object.y / OBJECT_SIZE).floor() * OBJECT_SIZE).max(OBJECT_SIZE * 5.0);
+				}
+				if object.id == PortalIds::Cube as i32 {
+					self.mode = PlayerMode::Cube;
+				}
+				if object.id == 35 {
+					// yellow pad, made up value
+					self.y_vel = 16.0;
+				}
+				if object.id == 36 && self.is_buffering {
+					// made up physics
+					self.y_vel = 11.180032;
+					self.is_buffering = false;
+				}
+				if !object.solid {
+					continue;
+				}
+				let player_bottom = self.y - HALF_OBJECT_SIZE;
+				// only step up on 1/3 of a block
+				let object_top =
+					object.y + (object_bb.height / 2.0 - OBJECT_SIZE / 3.0).max(0.0);
+
+				let player_top = self.y + HALF_OBJECT_SIZE;
+				let object_bottom = object_bb.y - object_bb.height;
+
+				if player_top < object_top && object_bottom < ceiling {
+					ceiling = object_bottom;
+				}
+
+				if player_bottom >= object_top {
+					if object_bb.y > ground && self.y_vel < 1.0 {
+						ground = object_bb.y;
+					}
+				} else if self.inner_bounding_box().intersects(&object_bb) {
+					self.dead = true;
+					return None;
+				}
+			}
+		}
+		Some((ground, ceiling))
+	}
+
 	pub fn update(&mut self, dt: f32, objects: &[Object]) {
 		if self.dead {
 			return;
@@ -141,58 +213,9 @@ impl Player {
 		const SUBSTEPS: i32 = 4;
 		let dt = dt / SUBSTEPS as f32;
 		for _ in 0..SUBSTEPS {
-			let mut ground = self.ground_height();
-			let mut ceiling = self.ceiling_height();
-			for object in objects {
-				let object_bb = object.offset_bounding_box();
-				if self.bounding_box().intersects(&object_bb) {
-					if object.death {
-						self.dead = true;
-						return;
-					}
-					if object.id == 13 {
-						self.mode = PlayerMode::Ship;
-						self.rotation = 0.0;
-						self.portal_y =
-							((object.y / OBJECT_SIZE).floor() * OBJECT_SIZE).max(OBJECT_SIZE * 5.0);
-					}
-					if object.id == 12 {
-						self.mode = PlayerMode::Cube;
-					}
-					if object.id == 35 {
-						// yellow pad, made up value
-						self.y_vel = 16.0;
-					}
-					if object.id == 36 && self.is_buffering {
-						// made up physics
-						self.y_vel = 11.180032;
-						self.is_buffering = false;
-					}
-					if !object.solid {
-						continue;
-					}
-					let player_bottom = self.y - HALF_OBJECT_SIZE;
-					// only step up on 1/3 of a block
-					let object_top =
-						object.y + (object_bb.height / 2.0 - OBJECT_SIZE / 3.0).max(0.0);
-
-					let player_top = self.y + HALF_OBJECT_SIZE;
-					let object_bottom = object_bb.y - object_bb.height;
-
-					if player_top < object_top && object_bottom < ceiling {
-						ceiling = object_bottom;
-					}
-
-					if player_bottom >= object_top {
-						if object_bb.y > ground && self.y_vel < 1.0 {
-							ground = object_bb.y;
-						}
-					} else if self.inner_bounding_box().intersects(&object_bb) {
-						self.dead = true;
-						return;
-					}
-				}
-			}
+			let Some((ground, ceiling)) = self.collision(objects) else {
+				return;
+			};
 
 			let rob_dt = dt * 60.0;
 			let slow_dt = rob_dt * 0.9;
@@ -243,7 +266,11 @@ impl Player {
 	}
 
 	fn update_jump(&mut self, slow_dt: f32) {
-		let local_gravity = self.gravity;
+		let local_gravity = if self.mode == PlayerMode::Cube {
+			self.gravity
+		} else {
+			0.958199
+		};
 		// TODO: gravity is fixed for everything not cube
 
 		let flip_gravity = 1.0; // -1.0 when upside down
@@ -307,6 +334,7 @@ impl Player {
 
 				self.y_vel = self.y_vel.clamp(lower_velocity, upper_velocity);
 			}
+			_ => {}
 		}
 	}
 

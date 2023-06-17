@@ -107,6 +107,7 @@ fn main() {
 		match level.player.mode {
 			player::PlayerMode::Cube => shape.set_texture(&texture, true),
 			player::PlayerMode::Ship => shape.set_texture(&ship_texture, false),
+			_ => {}
 		}
 		shape.set_origin((size / 2.0, size / 2.0));
 		shape.set_rotation(level.player.rotation);
