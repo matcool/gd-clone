@@ -1,4 +1,10 @@
 #[derive(Debug, Clone)]
+// bounding box with x, y on the top left
+// (x,y)-----*
+//   |       |
+//   |       |
+//   *-------(x+w, y-h)
+
 pub struct AxisBoundingBox {
 	pub x: f32,
 	pub y: f32,
@@ -78,14 +84,16 @@ pub enum PortalIds {
 	Mini = 101,
 	NotMini = 99,
 	Dual = 286,
-	Single = 287
+	Single = 287,
+	BlueGravity = 10,
+	YellowGravity = 11,
 }
 
 pub struct Player {
 	pub x: f32,
 	pub y: f32,
 	pub rotation: f32,
-	y_vel: f32,
+	pub y_vel: f32,
 	rotation_vel: f32,
 	dead: bool,
 	on_ground: bool,
@@ -97,6 +105,8 @@ pub struct Player {
 	pub portal_y: f32,
 	// if just started clicking and can hit orb
 	is_buffering: bool,
+	is_upside_down: bool,
+	jump_accel: f32,
 }
 
 impl Player {
@@ -115,6 +125,8 @@ impl Player {
 			gravity: 0.958199,
 			portal_y: 0.0,
 			is_buffering: false,
+			is_upside_down: false,
+			jump_accel: 11.180032,
 		}
 	}
 
@@ -147,7 +159,11 @@ impl Player {
 	}
 
 	pub fn ceiling_height(&self) -> f32 {
-		self.ground_height() + 10.0 * OBJECT_SIZE
+		if self.mode == PlayerMode::Cube {
+			300.0 * OBJECT_SIZE
+		} else {
+			self.ground_height() + 10.0 * OBJECT_SIZE
+		}
 	}
 
 	pub fn collision(&mut self, objects: &[Object]) -> Option<(f32, f32)> {
@@ -175,16 +191,26 @@ impl Player {
 				}
 				if object.id == 36 && self.is_buffering {
 					// made up physics
-					self.y_vel = 11.180032;
+					self.y_vel = self.jump_accel;
 					self.is_buffering = false;
 				}
+				if object.id == PortalIds::YellowGravity as i32 {
+					self.is_upside_down = true;
+				}
+				if object.id == 84 && self.is_buffering {
+					// made up physics
+					self.is_upside_down = !self.is_upside_down;
+					self.y_vel = self.jump_accel * -0.8 * self.get_gravity_mult();
+					self.is_buffering = false;
+				}
+
 				if !object.solid {
 					continue;
 				}
+
 				let player_bottom = self.y - HALF_OBJECT_SIZE;
 				// only step up on 1/3 of a block
-				let object_top =
-					object.y + (object_bb.height / 2.0 - OBJECT_SIZE / 3.0).max(0.0);
+				let object_top = object.y + (object_bb.height / 2.0 - OBJECT_SIZE / 3.0).max(0.0);
 
 				let player_top = self.y + HALF_OBJECT_SIZE;
 				let object_bottom = object_bb.y - object_bb.height;
@@ -203,7 +229,19 @@ impl Player {
 				}
 			}
 		}
-		Some((ground, ceiling))
+		if self.is_upside_down {
+			Some((ceiling, ground))
+		} else {
+			Some((ground, ceiling))
+		}
+	}
+
+	fn get_gravity_mult(&self) -> f32 {
+		if self.is_upside_down {
+			-1.0
+		} else {
+			1.0
+		}
 	}
 
 	pub fn update(&mut self, dt: f32, objects: &[Object]) {
@@ -231,8 +269,10 @@ impl Player {
 			self.x += dx;
 			self.y += dy;
 
-			if self.y - HALF_OBJECT_SIZE <= ground {
-				self.y = ground + HALF_OBJECT_SIZE;
+			let grav_mult = self.get_gravity_mult();
+
+			if (self.y - HALF_OBJECT_SIZE * grav_mult) * grav_mult <= ground * grav_mult {
+				self.y = ground + HALF_OBJECT_SIZE * grav_mult;
 				self.y_vel = 0.0;
 				if self.mode == PlayerMode::Cube {
 					self.rotation = (self.rotation / 90.0).round() * 90.0;
@@ -250,7 +290,7 @@ impl Player {
 			} else {
 				self.on_ground = false;
 				if self.mode == PlayerMode::Cube {
-					self.rotation += self.rotation_vel * dt;
+					self.rotation += self.rotation_vel * dt * grav_mult;
 				} else {
 					// dx dy tan-1 to get angle
 					self.rotation = -(dy / dx).atan().to_degrees();
@@ -263,6 +303,7 @@ impl Player {
 		self.dead = false;
 		self.y_vel = 0.0;
 		self.mode = PlayerMode::Cube;
+		self.is_upside_down = false;
 	}
 
 	fn update_jump(&mut self, slow_dt: f32) {
@@ -273,14 +314,18 @@ impl Player {
 		};
 		// TODO: gravity is fixed for everything not cube
 
-		let flip_gravity = 1.0; // -1.0 when upside down
+		// -1.0 when upside down
+		let flip_gravity = self.get_gravity_mult();
 		let player_size = 1.0;
 
 		match self.mode {
 			PlayerMode::Cube => {
-				let jump_power = 11.180032; // m_jumpAccel
-
-				let gravity_multiplier = 1.0;
+				let gravity_multiplier = match self.mode {
+					PlayerMode::Ball => 0.6,
+					PlayerMode::Spider => 0.6,
+					PlayerMode::Robot => 0.9,
+					_ => 1.0,
+				};
 
 				let should_jump = self.is_holding;
 
@@ -292,7 +337,7 @@ impl Player {
 					self.on_ground = false;
 					self.is_rising = true;
 
-					self.y_vel = flip_gravity * jump_power * player_size;
+					self.y_vel = flip_gravity * self.jump_accel * player_size;
 				} else {
 					if self.is_rising {
 						self.y_vel -= local_gravity * slow_dt * flip_gravity * gravity_multiplier;
@@ -305,8 +350,10 @@ impl Player {
 							self.on_ground = false;
 						}
 						self.y_vel -= local_gravity * slow_dt * flip_gravity * gravity_multiplier;
-						if self.y_vel <= -15.0 {
-							self.y_vel = -15.0;
+						if self.is_upside_down {
+							self.y_vel = self.y_vel.min(15.0);
+						} else {
+							self.y_vel = self.y_vel.max(-15.0);
 						}
 					}
 				}
